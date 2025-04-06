@@ -1,314 +1,271 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+
+interface PostcardData {
+  id: number;
+  title: string;
+  content: string;
+  icon: string;
+}
+
+const postcardData: PostcardData[] = [
+  {
+    id: 1,
+    title: "MISSION",
+    content: "To foster innovation and excellence in data science through collaborative learning and research.",
+    icon: "🎯"
+  },
+  {
+    id: 2,
+    title: "VISION",
+    content: "Empowering students with cutting-edge data science skills and creating future leaders in the field.",
+    icon: "👁️"
+  },
+  {
+    id: 3,
+    title: "ACHIEVEMENTS",
+    content: "Successfully organized 20+ workshops, 5 hackathons, and mentored 100+ students in data science projects.",
+    icon: "🏆"
+  },
+  {
+    id: 4,
+    title: "VALUES",
+    content: "Innovation • Collaboration • Excellence • Ethics • Leadership",
+    icon: "⭐"
+  },
+  {
+    id: 5,
+    title: "TEAM",
+    content: "A dynamic group of students, mentors, and industry experts working together to advance data science.",
+    icon: "👥"
+  },
+  {
+    id: 6,
+    title: "FUTURE",
+    content: "Building a comprehensive data science ecosystem and expanding our reach globally.",
+    icon: "🚀"
+  }
+];
 
 const About = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [flippedCard, setFlippedCard] = useState<number | null>(null);
+  const [shuffledCards, setShuffledCards] = useState<PostcardData[]>(postcardData);
+  const [isShuffling, setIsShuffling] = useState(false);
 
-  // Parallax scrolling effect
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"]
-  });
-  
-  const y = useTransform(scrollYProgress, [0, 1], [50, -50]);
-  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.8, 1], [0.3, 1, 1, 0.3]);
+  const shuffleCards = () => {
+    setIsShuffling(true);
+    const newCards = [...shuffledCards].sort(() => Math.random() - 0.5);
+    setShuffledCards(newCards);
+    setTimeout(() => setIsShuffling(false), 500);
+  };
+
+  const handleCardClick = (id: number) => {
+    setFlippedCard(flippedCard === id ? null : id);
+  };
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(entry.target);
-        }
-      },
-      {
-        threshold: 0.2,
-      }
-    );
+    // Add initial animation delay
+    const timer = setTimeout(() => {
+      shuffleCards();
+    }, 1000);
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current);
-      }
-    };
+    return () => clearTimeout(timer);
   }, []);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut",
-      },
-    },
-  };
-
-  // Floating animation
-  const floatingAnimation = {
-    initial: { y: 0 },
-    animate: { 
-      y: [0, -10, 0],
-      transition: {
-        duration: 5,
-        repeat: Infinity,
-        repeatType: "reverse" as const,
-        ease: "easeInOut"
-      }
-    }
-  };
-
   return (
-    <section 
-      id="about" 
-      ref={sectionRef}
-      className="relative py-20 md:py-32 px-4 overflow-hidden bg-white"
-    >
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div style={{ opacity }} className="absolute inset-0">
-          <motion.div 
-            className="absolute -right-40 -top-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.5, 0.7, 0.5]
-            }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              repeatType: "reverse"
-            }}
-          ></motion.div>
-          <motion.div 
-            className="absolute -left-40 -bottom-40 w-96 h-96 bg-black/5 rounded-full blur-3xl"
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.5, 0.3, 0.5]
-            }}
-            transition={{
-              duration: 15,
-              repeat: Infinity,
-              repeatType: "reverse"
-            }}
-          ></motion.div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FF0000' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-10"></div>
+    <section className="min-h-screen bg-[#0A0A0A] py-20 px-4 relative overflow-hidden">
+      {/* Retro Background Grid */}
+      <div className="absolute inset-0 bg-[#0A0A0A]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 39px,
+            rgba(255, 0, 0, 0.1) 39px,
+            rgba(255, 0, 0, 0.1) 40px
+          )`
+        }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 39px,
+            rgba(255, 0, 0, 0.1) 39px,
+            rgba(255, 0, 0, 0.1) 40px
+          )`
+        }} />
+      </div>
+
+      {/* Section Title */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-16 relative z-10"
+      >
+        <h2 className="text-5xl font-bold text-red-500 heading-8bit mb-4">
+          ABOUT US
+        </h2>
+        <motion.div 
+          className="h-1 w-48 mx-auto bg-gradient-to-r from-transparent via-red-500 to-transparent"
+          animate={{
+            opacity: [0.5, 1, 0.5],
+            scale: [1, 1.05, 1]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+      </motion.div>
+
+      {/* Shuffle Button */}
+      <motion.button
+        onClick={shuffleCards}
+        className="relative mx-auto mb-12 block group"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-red-500/30 to-white/20 rounded-lg blur-sm"
+          animate={{
+            opacity: [0.4, 0.6, 0.4],
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+        <div className="relative px-8 py-2 bg-black/90 border border-red-500 group-hover:border-white transition-colors duration-300 rounded-lg backdrop-blur-sm">
+          <span className="text-white text-lg font-medium tracking-wider">SHUFFLE CARDS</span>
+        </div>
+      </motion.button>
+
+      {/* Postcards Grid */}
+      <div className="container mx-auto max-w-6xl">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          layout
+        >
+          {shuffledCards.map((card) => (
+            <motion.div
+              key={card.id}
+              layoutId={`card-${card.id}`}
+              className="relative aspect-[4/3] cursor-pointer [perspective:1000px]"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                rotate: isShuffling ? Math.random() * 20 - 10 : 0
+              }}
+              transition={{ duration: 0.5 }}
+              onClick={() => handleCardClick(card.id)}
+              whileHover={{ 
+                scale: 1.05,
+                rotate: Math.random() * 5 - 2.5
+              }}
+            >
+              <div 
+                className="relative w-full h-full transition-all duration-700 [transform-style:preserve-3d]"
+                style={{ 
+                  transform: flippedCard === card.id ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                }}
+              >
+                {/* Back of card */}
+                <div 
+                  className="absolute inset-0 bg-black/90 border-2 border-red-500 rounded-lg p-6 flex flex-col items-center justify-center [transform:rotateY(180deg)] [backface-visibility:hidden]"
+                >
+                  <div className="text-white text-center">
+                    <p className="text-lg mb-4 pixel-text">{card.content}</p>
+                    <span className="text-red-500 text-sm">Click to flip back</span>
+                  </div>
+                  
+                  {/* Back side holographic effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent rounded-lg"
+                    animate={{
+                      opacity: [0, 0.2, 0]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </div>
+
+                {/* Front of card */}
+                <div 
+                  className="absolute inset-0 bg-black/90 border-2 border-red-500 rounded-lg p-6 [backface-visibility:hidden]"
+                >
+                  <div className="h-full flex flex-col items-center justify-center relative">
+                    {/* Corner Decorations */}
+                    {['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'].map((position, i) => (
+                      <div key={i} className={`absolute w-6 h-6 ${position} border-red-500`} style={{
+                        borderWidth: position.includes('top') ? '2px 2px 0 0' : position.includes('bottom') ? '0 0 2px 2px' : '2px'
+                      }} />
+                    ))}
+                    
+                    {/* Icon */}
+                    <motion.div
+                      className="text-4xl mb-4"
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        rotate: [0, 5, -5, 0]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      {card.icon}
+                    </motion.div>
+                    
+                    {/* Title */}
+                    <h3 className="text-2xl font-bold text-red-500 mb-2 text-center heading-8bit">
+                      {card.title}
+                    </h3>
+                    
+                    <span className="text-white/70 text-sm">Click to flip</span>
+                    
+                    {/* Front side holographic effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-lg"
+                      animate={{
+                        opacity: [0, 0.1, 0]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card glow effect */}
+              <motion.div
+                className="absolute inset-0 -z-10 bg-red-500/20 blur-xl rounded-lg"
+                animate={{
+                  opacity: [0.5, 0.8, 0.5],
+                  scale: [0.95, 1, 0.95]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </motion.div>
+          ))}
         </motion.div>
       </div>
 
-      <motion.div 
-        style={{ y }}
-        className="container mx-auto relative z-10"
-        ref={contentRef}
-      >
+      {/* Corner Decorations */}
+      {[
+        'top-0 left-0',
+        'top-0 right-0 rotate-90',
+        'bottom-0 right-0 rotate-180',
+        'bottom-0 left-0 -rotate-90'
+      ].map((position, index) => (
         <motion.div
-          className="flex flex-col lg:flex-row items-center justify-between gap-16"
-          variants={containerVariants}
-          initial="hidden"
-          animate={isVisible ? "visible" : "hidden"}
+          key={index}
+          className={`absolute w-16 h-16 ${position} opacity-60`}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 0.6, scale: 1 }}
+          transition={{ delay: 0.2 * index }}
         >
-          {/* Left content */}
-          <motion.div variants={itemVariants} className="flex-1">
-            <motion.div 
-              className="inline-block px-4 py-1 mb-4 bg-red-50 border border-primary/20 rounded-full"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              <motion.span
-                className="text-primary font-mono text-sm font-medium"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                01 · ABOUT US
-              </motion.span>
-            </motion.div>
-
-            <motion.h2 
-              variants={itemVariants}
-              className="text-4xl md:text-6xl font-bold mb-6 text-black"
-            >
-              Data<span className="text-primary">zen</span> Community
-            </motion.h2>
-            
-            <motion.p variants={itemVariants} className="text-lg text-gray-700 mb-6">
-              Datazen is a dynamic community of data enthusiasts, innovators, and problem solvers. We are committed to bridging the gap between data science theory and real-world applications.
-            </motion.p>
-
-            <motion.p variants={itemVariants} className="text-lg text-gray-700 mb-8">
-              We think slightly out of the box, we believe that a community's resources must not only be channeled into conducting events but also to propagate learning and teaching, symbiotically.
-            </motion.p>
-
-            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-              <motion.div 
-                className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
-                whileHover={{ 
-                  scale: 1.05, 
-                  backgroundColor: "rgba(255, 255, 255, 1)",
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)"
-                }}
-                variants={floatingAnimation}
-                initial="initial"
-                animate="animate"
-              >
-                <div className="text-primary text-3xl font-bold mb-2">25+</div>
-                <div className="text-gray-700">Events Organized</div>
-              </motion.div>
-
-              <motion.div 
-                className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
-                whileHover={{ 
-                  scale: 1.05, 
-                  backgroundColor: "rgba(255, 255, 255, 1)",
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)"
-                }}
-                variants={floatingAnimation}
-                initial="initial"
-                animate="animate"
-                style={{ animationDelay: "0.2s" }}
-              >
-                <div className="text-primary text-3xl font-bold mb-2">2k+</div>
-                <div className="text-gray-700">Community Members</div>
-              </motion.div>
-
-              <motion.div 
-                className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
-                whileHover={{ 
-                  scale: 1.05, 
-                  backgroundColor: "rgba(255, 255, 255, 1)",
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)"
-                }}
-                variants={floatingAnimation}
-                initial="initial"
-                animate="animate"
-                style={{ animationDelay: "0.4s" }}
-              >
-                <div className="text-primary text-3xl font-bold mb-2">10+</div>
-                <div className="text-gray-700">Years Experience</div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-
-          {/* Right content - Mission card */}
-          <motion.div 
-            variants={itemVariants} 
-            className="flex-1 flex justify-center items-center"
+          <motion.div
+            className="w-full h-full relative"
+            animate={{
+              opacity: [0.4, 0.7, 0.4],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
           >
-            <motion.div 
-              className="relative w-full max-w-md"
-              initial={{ opacity: 0, y: 50, rotate: -5 }}
-              animate={{ opacity: 1, y: 0, rotate: 0 }}
-              transition={{ 
-                duration: 0.8, 
-                delay: 0.5,
-                ease: [0.25, 0.1, 0.25, 1]
-              }}
-              whileHover={{ 
-                rotate: 2,
-                transition: { duration: 0.5 }
-              }}
-            >
-              {/* Abstract shapes in background */}
-              <motion.div 
-                className="absolute -right-8 -top-8 w-20 h-20 bg-primary/10 rounded-full"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.8, 0.5]
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  repeatType: "reverse"
-                }}
-              />
-              
-              <motion.div 
-                className="absolute -left-5 -bottom-5 w-16 h-16 bg-black/5 rounded-full"
-                animate={{
-                  scale: [1, 1.3, 1],
-                  opacity: [0.3, 0.6, 0.3]
-                }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  repeatType: "reverse"
-                }}
-              />
-              
-              {/* Main content card */}
-              <div className="relative bg-white border border-gray-100 p-8 rounded-2xl shadow-xl overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/70"></div>
-                
-                <h3 className="text-2xl font-bold mb-4 text-black">Our <span className="text-primary">Mission</span></h3>
-                
-                <p className="text-gray-700 mb-6">
-                  To create a thriving ecosystem where data science knowledge is accessible to all, 
-                  fostering innovation and collaboration among enthusiasts, students, and professionals.
-                </p>
-                
-                <div className="flex flex-col space-y-4">
-                  <motion.div 
-                    className="flex items-center"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7, duration: 0.5 }}
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="flex justify-center items-center w-8 h-8 rounded-full bg-red-50 mr-3">
-                      <div className="w-3 h-3 rounded-full bg-primary"></div>
-                    </div>
-                    <p className="text-gray-700">Community-driven learning</p>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="flex items-center"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.8, duration: 0.5 }}
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="flex justify-center items-center w-8 h-8 rounded-full bg-red-50 mr-3">
-                      <div className="w-3 h-3 rounded-full bg-primary"></div>
-                    </div>
-                    <p className="text-gray-700">Practical skill development</p>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="flex items-center"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.9, duration: 0.5 }}
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="flex justify-center items-center w-8 h-8 rounded-full bg-red-50 mr-3">
-                      <div className="w-3 h-3 rounded-full bg-primary"></div>
-                    </div>
-                    <p className="text-gray-700">Networking opportunities</p>
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
+            <div className="absolute inset-0 border-l-4 border-t-4 border-red-500" />
+            <div className="absolute inset-4 border-l-2 border-t-2 border-white/30" />
           </motion.div>
         </motion.div>
-      </motion.div>
+      ))}
     </section>
   );
 };

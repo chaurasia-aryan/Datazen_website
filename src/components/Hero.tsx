@@ -1,274 +1,987 @@
-import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+
+// Simple anchor link component
+const AnchorLink = ({ href, className, children }: { href: string, className?: string, children: React.ReactNode }) => (
+  <a href={href} className={className}>
+    {children}
+  </a>
+);
 
 const Hero = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [activeSquare, setActiveSquare] = useState<number | null>(null);
+  const [menuState, setMenuState] = useState<'main' | 'options'>('main');
+  const [selectedOption, setSelectedOption] = useState(0);
+  const [showOptions, setShowOptions] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollY = useMotionValue(0);
+  
+  // Add theme state
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // Motion values for scroll-based animations
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useTransform(mouseY, [-300, 300], [3, -3]);
+  const rotateY = useTransform(mouseX, [-300, 300], [-3, 3]);
+
+  // Add new state for options
+  const [graphicsQuality, setGraphicsQuality] = useState('HIGH');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [difficulty, setDifficulty] = useState('NORMAL');
+
+  const graphicsOptions = ['LOW', 'MEDIUM', 'HIGH', 'ULTRA'];
+  const difficultyOptions = ['EASY', 'NORMAL', 'HARD', 'EXTREME'];
+
+  const optionsMenu = [
+    `GRAPHICS: ${graphicsQuality}`,
+    `SOUND: ${soundEnabled ? 'ON' : 'OFF'}`,
+    `DIFFICULTY: ${difficulty}`,
+    'BACK'
+  ];
+
+  // Toggle theme function
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    // Toggle light-mode class on document body
+    if (isDarkMode) {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+  };
+
+  // Add navbar items
+  const navItems = ['HOME', 'ABOUT', 'EVENTS', 'TEAM', 'CONTACT'];
+  const [activeNavItem, setActiveNavItem] = useState(0);
+
+  const handleOptionSelect = (index: number) => {
+    switch(index) {
+      case 0: // Graphics
+        const currentGraphicsIndex = graphicsOptions.indexOf(graphicsQuality);
+        setGraphicsQuality(graphicsOptions[(currentGraphicsIndex + 1) % graphicsOptions.length]);
+        // Apply graphics changes
+        const quality = graphicsOptions[(currentGraphicsIndex + 1) % graphicsOptions.length];
+        if (quality === 'LOW') {
+          document.documentElement.style.setProperty('--animation-speed', '0.5');
+          document.documentElement.style.setProperty('--particle-count', '10');
+        } else if (quality === 'MEDIUM') {
+          document.documentElement.style.setProperty('--animation-speed', '1');
+          document.documentElement.style.setProperty('--particle-count', '20');
+        } else if (quality === 'HIGH') {
+          document.documentElement.style.setProperty('--animation-speed', '1.5');
+          document.documentElement.style.setProperty('--particle-count', '30');
+        } else {
+          document.documentElement.style.setProperty('--animation-speed', '2');
+          document.documentElement.style.setProperty('--particle-count', '40');
+        }
+        break;
+      case 1: // Sound
+        setSoundEnabled(!soundEnabled);
+        // Toggle sound effects
+        if (!soundEnabled) {
+          // Play a test sound when enabled
+          const audio = new Audio('/sounds/select.mp3');
+          audio.volume = 0.3;
+          audio.play().catch(() => {}); // Catch and ignore if audio isn't loaded
+        }
+        break;
+      case 2: // Difficulty
+        const currentDiffIndex = difficultyOptions.indexOf(difficulty);
+        setDifficulty(difficultyOptions[(currentDiffIndex + 1) % difficultyOptions.length]);
+        break;
+      case 3: // Back
+        setShowOptions(false);
+        setSelectedOption(0);
+        break;
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (showOptions) {
+      switch (e.key) {
+        case 'ArrowUp':
+          setSelectedOption((prev) => (prev > 0 ? prev - 1 : optionsMenu.length - 1));
+          break;
+        case 'ArrowDown':
+          setSelectedOption((prev) => (prev < optionsMenu.length - 1 ? prev + 1 : 0));
+          break;
+        case 'Enter':
+          handleOptionSelect(selectedOption);
+          break;
+        case 'Escape':
+          setShowOptions(false);
+          setSelectedOption(0);
+          break;
+      }
+    }
+  };
 
   useEffect(() => {
-    // Delay the animation slightly for a better entrance effect
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 300);
 
-    // Track mouse movement for parallax effect
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: e.clientX,
-        y: e.clientY
-      });
+    const handleScroll = () => {
+      scrollY.set(window.scrollY);
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      const rect = containerRef.current?.getBoundingClientRect();
+      
+      if (rect) {
+        const x = clientX - rect.left - rect.width / 2;
+        const y = clientY - rect.top - rect.height / 2;
+        mouseX.set(x);
+        mouseY.set(y);
+      }
+    };
+
+    // Initialize theme
+    if (!isDarkMode) {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll);
     
     return () => {
       clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
-
-  // Text animation variants
-  const textVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  // Container animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  };
-
-  // Calculate the movement for parallax effect
-  const calcParallaxMovement = (factor: number) => {
-    const x = (mousePosition.x - window.innerWidth / 2) * factor;
-    const y = (mousePosition.y - window.innerHeight / 2) * factor;
-    return { x, y };
-  };
+  }, [mouseX, mouseY, scrollY, showOptions, isDarkMode]);
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white via-white to-black/10"></div>
-      
-      {/* Light particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 20 }).map((_, index) => (
+    <section 
+      ref={containerRef} 
+      className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden ${
+        isDarkMode ? 'bg-[#0A0A0A]' : 'bg-[#f0f0f0]'
+      } crt-screen arcade-screen screen-glitch transition-colors duration-500`}
+    >
+      {/* Retro Background Effects - conditional based on theme */}
+      <div className={`absolute inset-0 ${isDarkMode ? 'retro-hero-bg' : 'retro-hero-bg-light'}`}>
+        {/* Main grid pattern */}
+        <div className="absolute inset-0 bg-[#0A0A0A]">
+          {/* Horizontal lines */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 39px,
+              rgba(255, 0, 0, 0.1) 39px,
+              rgba(255, 0, 0, 0.1) 40px
+            )`
+          }} />
+          
+          {/* Vertical lines */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `repeating-linear-gradient(
+              90deg,
+              transparent,
+              transparent 39px,
+              rgba(255, 0, 0, 0.1) 39px,
+              rgba(255, 0, 0, 0.1) 40px
+            )`
+          }} />
+
+          {/* Diagonal overlay */}
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 20px,
+              rgba(255, 0, 0, 0.2) 20px,
+              rgba(255, 0, 0, 0.2) 40px
+            )`
+          }} />
+
+          {/* Subtle radial gradient for depth */}
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(circle at 50% 50%, rgba(255, 0, 0, 0.1) 0%, transparent 70%)'
+          }} />
+        </div>
+
+        {/* Animated scan lines */}
+        <motion.div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 1px,
+              rgba(255, 0, 0, 0.05) 1px,
+              rgba(255, 0, 0, 0.05) 2px
+            )`,
+            backgroundSize: '100% 4px'
+          }}
+          animate={{
+            backgroundPosition: ['0px 0px', '0px 4px']
+          }}
+          transition={{
+            duration: 0.2,
+            repeat: Infinity,
+            ease: 'linear'
+          }}
+        />
+
+        {/* Corner accent lines */}
+        {[
+          { position: 'top-0 left-0', rotate: '0deg' },
+          { position: 'top-0 right-0', rotate: '90deg' },
+          { position: 'bottom-0 right-0', rotate: '180deg' },
+          { position: 'bottom-0 left-0', rotate: '270deg' }
+        ].map((corner, index) => (
           <motion.div
             key={index}
-            className="absolute rounded-full bg-primary/20"
-            initial={{
-              width: Math.random() * 10 + 5,
-              height: Math.random() * 10 + 5,
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-              opacity: Math.random() * 0.3 + 0.1
+            className={`absolute ${corner.position} w-32 h-32`}
+            style={{ rotate: corner.rotate }}
+          >
+            <motion.div
+              className="absolute top-0 left-0 h-[2px] bg-gradient-to-r from-red-500/50 to-transparent w-full"
+              animate={{
+                opacity: [0.3, 0.6, 0.3]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                delay: index * 0.5
+              }}
+            />
+            <motion.div
+              className="absolute top-0 left-0 w-[2px] bg-gradient-to-b from-red-500/50 to-transparent h-full"
+              animate={{
+                opacity: [0.3, 0.6, 0.3]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                delay: index * 0.5 + 0.25
+              }}
+            />
+          </motion.div>
+        ))}
+
+        {/* Animated circuit paths */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute w-full h-full"
+            style={{
+              backgroundImage: `
+                linear-gradient(90deg, transparent 99%, rgba(255, 0, 0, 0.1) 100%),
+                linear-gradient(0deg, transparent 99%, rgba(255, 0, 0, 0.1) 100%)
+              `,
+              backgroundSize: '40px 40px'
             }}
             animate={{
-              y: [null, "100vh"],
-              opacity: [null, 0]
+              backgroundPosition: ['0px 0px', '40px 40px']
             }}
             transition={{
-              duration: Math.random() * 15 + 10,
+              duration: 20,
               repeat: Infinity,
-              ease: "linear"
+              ease: 'linear'
             }}
           />
-        ))}
-      </div>
-      
-      {/* Grid pattern */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FF0000' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-10"></div>
+        </div>
 
-      {/* Diagonal strips */}
-      <motion.div 
-        className="absolute -top-24 -right-24 w-72 h-96 bg-primary/5 rounded-full blur-3xl"
-        animate={calcParallaxMovement(-0.02)}
-        transition={{ type: "spring", damping: 50 }}
-      ></motion.div>
-      <motion.div 
-        className="absolute -bottom-24 -left-24 w-72 h-96 bg-primary/5 rounded-full blur-3xl"
-        animate={calcParallaxMovement(-0.01)}
-        transition={{ type: "spring", damping: 50 }}
-      ></motion.div>
-      
-      <div className="container mx-auto px-4 md:px-8 relative z-10 flex flex-col md:flex-row items-center justify-between py-20">
-        {/* Left side with logo */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }} 
-          animate={isVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex-1 flex justify-center mb-10 md:mb-0"
-        >
-          <motion.div 
-            className="relative w-64 h-64 md:w-96 md:h-96"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            {/* Background Card Effect */}
-            <motion.div 
-              className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-full shadow-xl"
-              animate={calcParallaxMovement(0.02)}
-              transition={{ type: "spring", damping: 30 }}
-            ></motion.div>
-            
-            {/* Data visualization inspired logo */}
-            <svg viewBox="0 0 200 200" className="w-full h-full relative z-10">
-              <defs>
-                <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#FF0000" />
-                  <stop offset="100%" stopColor="#990000" />
-                </linearGradient>
-                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="5" result="blur"/>
-                  <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-                </filter>
-              </defs>
-              
-              {/* Outer circle */}
-              <circle cx="100" cy="100" r="90" fill="none" stroke="#f1f1f1" strokeWidth="2" />
-              
-              {/* Animated Orbit */}
-              <motion.circle 
-                cx="100" 
-                cy="100" 
-                r="75" 
-                fill="none" 
-                stroke="#FF0000" 
-                strokeWidth="1" 
-                strokeDasharray="5,5"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-                style={{ transformOrigin: "center" }}
-              />
-              
-              {/* Data points and connections */}
-              <motion.circle 
-                cx="70" cy="70" r="10" fill="url(#redGradient)" filter="url(#glow)"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.circle 
-                cx="140" cy="60" r="8" fill="url(#redGradient)" filter="url(#glow)"
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-              />
-              <motion.circle 
-                cx="150" cy="120" r="12" fill="url(#redGradient)" filter="url(#glow)"
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-              />
-              <motion.circle 
-                cx="90" cy="150" r="9" fill="url(#redGradient)" filter="url(#glow)"
-                animate={{ scale: [1, 1.25, 1] }}
-                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
-              />
-              <motion.circle 
-                cx="40" cy="110" r="7" fill="url(#redGradient)" filter="url(#glow)"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
-              />
-              
-              {/* Connection lines with animation */}
-              <motion.path 
-                d="M70,70 L140,60 L150,120 L90,150 L40,110 Z" 
-                fill="none" 
-                stroke="#FF0000" 
-                strokeWidth="2" 
-                strokeOpacity="0.5"
-                strokeDasharray="1000"
-                strokeDashoffset="1000"
-                animate={{ strokeDashoffset: 0 }}
-                transition={{ duration: 6, ease: "easeInOut" }}
-              />
-              
-              {/* Center logo */}
-              <circle cx="100" cy="100" r="35" fill="white" stroke="#FF0000" strokeWidth="2" />
-              <text x="100" y="108" fontSize="28" fontWeight="bold" fill="#000000" textAnchor="middle" fontFamily="Roboto">DZ</text>
-            </svg>
-          </motion.div>
-        </motion.div>
-        
-        {/* Right side with text */}
-        <motion.div 
-          className="flex-1"
-          variants={containerVariants}
-          initial="hidden"
-          animate={isVisible ? "visible" : "hidden"}
-        >
-          <motion.h1 
-            className="font-display text-6xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6"
-            variants={textVariants}
-          >
-            <span className="text-primary">DATA</span>
-            <span className="text-black">ZEN</span>
-          </motion.h1>
-          
-          <motion.p 
-            className="text-xl md:text-2xl text-gray-700 mb-8 font-medium"
-            variants={textVariants}
-          >
-            When we analyze, it matters.
-          </motion.p>
-          
-          <motion.div 
-            className="flex flex-wrap gap-4"
-            variants={textVariants}
-          >
-            <motion.a
-              href="#about"
-              className="px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
-              whileHover={{ scale: 1.05, boxShadow: "0 10px 25px -5px rgba(255, 0, 0, 0.3)" }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              Explore
-            </motion.a>
-            <motion.a
-              href="#events"
-              className="px-6 py-3 bg-white text-black border-2 border-black/10 font-medium rounded-lg hover:border-primary/50 hover:text-primary transition-colors shadow-lg"
-              whileHover={{ scale: 1.05, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              Our Events
-            </motion.a>
-          </motion.div>
-        </motion.div>
+        {/* Subtle vignette effect */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.4) 100%)'
+        }} />
       </div>
+
+      {/* Enhanced Scanline Effect */}
+      <div className="absolute inset-0 pointer-events-none z-50 bg-gradient-to-b from-transparent via-black/5 to-transparent bg-size-200 animate-scan opacity-30" />
       
-      {/* Scroll indicator */}
+      {/* Enhanced CRT Noise Effect */}
+      <div className="absolute inset-0 pointer-events-none z-40 opacity-[0.03] mix-blend-screen">
+        <div className="absolute inset-0 bg-noise animate-noise" />
+      </div>
+
+      {/* Immersive Navbar - Improved integration */}
       <motion.div 
-        className="absolute bottom-10 left-1/2 transform -translate-x-1/2"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5, duration: 0.8 }}
+        className="fixed top-0 left-0 right-0 z-30"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
       >
+        {/* Navbar background with gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-transparent h-24" />
+        
+        {/* Red line accent */}
         <motion.div 
-          className="w-6 h-10 border-2 border-gray-400 rounded-full flex justify-center"
-          animate={{ boxShadow: ["0 0 0 rgba(0, 0, 0, 0)", "0 0 10px rgba(0, 0, 0, 0.2)", "0 0 0 rgba(0, 0, 0, 0)"] }}
+          className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/50 to-transparent"
+          animate={{
+            opacity: [0.3, 0.6, 0.3]
+          }}
           transition={{ duration: 2, repeat: Infinity }}
+        />
+
+        <div className="container mx-auto px-6 py-4 relative">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <AnchorLink href="/" className="flex items-center space-x-2 group">
+              <div className="relative">
+                <span className="text-2xl font-bold tracking-wider relative z-10">
+                  <span className="text-white group-hover:text-red-400 transition-colors">DATA</span>
+                  <span className="text-red-500 group-hover:text-red-400 transition-colors">ZEN</span>
+                </span>
+                <motion.div
+                  className="absolute inset-0 bg-red-500/20 blur-sm"
+                  animate={{
+                    opacity: [0.2, 0.4, 0.2]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </div>
+            </AnchorLink>
+            
+            {/* Navigation */}
+            <div className="hidden md:flex items-center space-x-12">
+              {navItems.map((item, index) => (
+                <motion.div
+                  key={item}
+                  className="relative"
+                  onHoverStart={() => setActiveNavItem(index)}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <AnchorLink 
+                    href={`#${item.toLowerCase()}`} 
+                    className="text-white/90 text-sm tracking-wider hover:text-red-400 transition-colors relative py-2"
+                  >
+                    {item}
+                  </AnchorLink>
+                  {activeNavItem === index && (
+                    <motion.div 
+                      className="absolute -bottom-1 left-0 right-0 h-[2px]"
+                      layoutId="navIndicator"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <div className="h-full bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Power LED */}
+            <motion.div
+              className="w-3 h-3 relative"
+              animate={{
+                boxShadow: [
+                  '0 0 5px #ff0000',
+                  '0 0 10px #ff0000',
+                  '0 0 5px #ff0000'
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <motion.div
+                className="absolute inset-0 rounded-full bg-red-500"
+                animate={{
+                  opacity: [0.7, 1, 0.7]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <div className="absolute inset-0 rounded-full bg-red-500 blur-sm" />
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Main Content - Improved alignment */}
+      <motion.div
+        className="relative z-10 text-center w-full mx-auto flex flex-col items-center justify-center min-h-screen pt-24"
+        style={{
+          rotateX,
+          rotateY,
+          transformStyle: 'preserve-3d',
+          perspective: '1000px'
+        }}
+      >
+        {/* Title Container - Better spacing */}
+        <motion.div
+          className="relative flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
         >
-          <motion.div 
-            className="w-1 h-2 bg-primary rounded-full mt-2"
-            animate={{ y: [0, 15, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          />
+          {/* Main Title - Adjusted size and spacing */}
+          <motion.h1
+            className="text-6xl md:text-7xl lg:text-8xl font-black relative heading-8bit circuit-text hologram-base digital-distortion mb-4"
+          >
+            <motion.div 
+              className="relative overflow-hidden py-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1 }}
+            >
+              {/* Glitch layers for creative effect */}
+              <div className="absolute inset-0 left-[2px] opacity-50 text-[#ff0000] hidden md:block" style={{ clipPath: 'polygon(0 15%, 100% 15%, 100% 17%, 0 17%, 0 40%, 100% 40%, 100% 42%, 0 42%)' }}>DATAZEN</div>
+              <div className="absolute inset-0 left-[-2px] opacity-50 text-[#ff0000] hidden md:block" style={{ clipPath: 'polygon(0 65%, 100% 65%, 100% 67%, 0 67%, 0 75%, 100% 75%, 100% 77%, 0 77%)' }}>DATAZEN</div>
+              
+              {/* Main text with all red characters */}
+              <div className="wavey-text relative text-red-600">
+                <motion.div 
+                  className="relative inline-block"
+                  animate={{ 
+                    textShadow: [
+                      '0 0 5px rgba(255,0,0,0.5), 0 0 10px rgba(255,0,0,0.5)',
+                      '0 0 7px rgba(255,0,0,0.7), 0 0 15px rgba(255,0,0,0.7)',
+                      '0 0 5px rgba(255,0,0,0.5), 0 0 10px rgba(255,0,0,0.5)'
+                    ]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <motion.span 
+                    className="hologram-red digital-glitch inline-block"
+                    data-text="D"
+                    animate={{ 
+                      y: [0, -3, 0, 2, 0],
+                      rotate: [0, 0.5, 0, -0.5, 0]
+                    }}
+                    transition={{ duration: 3, repeat: Infinity, repeatType: 'reverse' }}
+                  >D</motion.span>
+                  <motion.span 
+                    className="hologram-red inline-block"
+                    animate={{ 
+                      y: [0, 3, 0, -2, 0],
+                      rotate: [0, -0.7, 0, 0.7, 0]
+                    }}
+                    transition={{ duration: 2.5, repeat: Infinity, repeatType: 'reverse', delay: 0.1 }}
+                  >A</motion.span>
+                  <motion.span 
+                    className="hologram-red scan-text inline-block"
+                    animate={{ 
+                      y: [0, -2, 0, 3, 0],
+                      rotate: [0, 0.3, 0, -0.3, 0]
+                    }}
+                    transition={{ duration: 2.8, repeat: Infinity, repeatType: 'reverse', delay: 0.2 }}
+                  >T</motion.span>
+                  <motion.span 
+                    className="hologram-red digital-glitch inline-block"
+                    data-text="A"
+                    animate={{ 
+                      y: [0, 2, 0, -3, 0],
+                      rotate: [0, -0.4, 0, 0.4, 0]
+                    }}
+                    transition={{ duration: 3.2, repeat: Infinity, repeatType: 'reverse', delay: 0.3 }}
+                  >A</motion.span>
+                </motion.div>
+                
+                <motion.div 
+                  className="relative inline-block"
+                  animate={{ 
+                    textShadow: [
+                      '0 0 5px rgba(255,0,0,0.5), 0 0 10px rgba(255,0,0,0.5)',
+                      '0 0 7px rgba(255,0,0,0.7), 0 0 15px rgba(255,0,0,0.7)',
+                      '0 0 5px rgba(255,0,0,0.5), 0 0 10px rgba(255,0,0,0.5)'
+                    ]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <motion.span 
+                    className="hologram-red digital-glitch inline-block"
+                    data-text="Z"
+                    animate={{ 
+                      y: [0, 2, 0, -3, 0],
+                      rotate: [0, -0.6, 0, 0.6, 0] 
+                    }}
+                    transition={{ duration: 3.2, repeat: Infinity, repeatType: 'reverse', delay: 0.4 }}
+                  >Z</motion.span>
+                  <motion.span 
+                    className="hologram-red scan-text inline-block"
+                    animate={{ 
+                      y: [0, -2, 0, 3, 0],
+                      rotate: [0, 0.5, 0, -0.5, 0]
+                    }}
+                    transition={{ duration: 2.8, repeat: Infinity, repeatType: 'reverse', delay: 0.5 }}
+                  >E</motion.span>
+                  <motion.span 
+                    className="hologram-red digital-glitch inline-block"
+                    data-text="N"
+                    animate={{ 
+                      y: [0, 3, 0, -2, 0],
+                      rotate: [0, -0.4, 0, 0.4, 0]
+                    }}
+                    transition={{ duration: 3, repeat: Infinity, repeatType: 'reverse', delay: 0.6 }}
+                  >N</motion.span>
+                </motion.div>
+              </div>
+              
+              {/* Hologram projector beams - red color */}
+              <motion.div
+                className="absolute inset-0 z-[-1] opacity-20"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(255,0,0,0.2) 0%, rgba(0,0,0,0) 70%)',
+                }}
+                animate={{
+                  opacity: [0.2, 0.3, 0.2],
+                }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
+              
+              {/* Overlay flicker effect */}
+              <motion.div 
+                className="absolute inset-0 bg-black pointer-events-none mix-blend-overlay"
+                animate={{ opacity: [0, 0.03, 0, 0.01, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: 'loop' }}
+              />
+            </motion.div>
+          </motion.h1>
+
+          {/* Retro Line Decoration - Adjusted width */}
+          <div className="relative h-2 w-48 md:w-64 mx-auto mt-2">
+            <motion.div className="loading-bar w-full rounded-md" />
+          </div>
         </motion.div>
-        <p className="text-gray-500 text-xs mt-2 text-center">Scroll Down</p>
+
+        <AnimatePresence mode="wait">
+          {showOptions ? (
+            <motion.div
+              key="options"
+              className="relative mx-auto mt-4 max-w-md w-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <div className="absolute inset-0 border-2 border-gradient-to-r from-red-500/50 to-white/50 bg-black/80 arcade-screen rounded-lg" />
+              <div className="relative p-6">
+                <h2 className="text-xl text-white mb-6 heading-8bit">OPTIONS</h2>
+                <div className="flex flex-col gap-3">
+                  {optionsMenu.map((option, index) => (
+                    <motion.div
+                      key={option}
+                      className={`relative px-3 py-2 cursor-pointer ${selectedOption === index ? 'text-white' : 'text-white'} pixel-text text-xs md:text-sm`}
+                      whileHover={{ x: 20 }}
+                      onClick={() => {
+                        setSelectedOption(index);
+                        handleOptionSelect(index);
+                      }}
+                    >
+                      {selectedOption === index && (
+                        <motion.div
+                          className="absolute left-0 top-1/2 -translate-y-1/2 neon-red"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                        >
+                          ▶
+                        </motion.div>
+                      )}
+                      {option}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-white/10 rounded-md"
+                        initial={false}
+                        animate={{
+                          opacity: selectedOption === index ? 1 : 0,
+                        }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="mt-6 text-xs text-white/60 pixel-text flex items-center gap-2">
+                  <div className="pixel-joystick w-3 h-3"></div> Use arrow keys to navigate, Enter to select, Esc to go back
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="main"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full max-w-3xl mx-auto"
+            >
+              {/* Description Box - Improved positioning and width */}
+              <motion.div
+                className="relative p-8 boot-text bg-black/80 w-full rounded-xl overflow-hidden mx-auto"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                whileHover={{ 
+                  scale: 1.02,
+                  rotateX: 2, 
+                  rotateY: 2,
+                  boxShadow: "0 20px 30px rgba(0,0,0,0.2)",
+                  transition: { duration: 0.3 }
+                }}
+                style={{ 
+                  transformStyle: "preserve-3d",
+                  perspective: "1000px"
+                }}
+              >
+                {/* Circuit pattern overlay */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none z-10 opacity-10"
+                  style={{
+                    backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h80v80h-80z' fill='none' stroke='%23ff0000' stroke-width='0.5'/%3E%3Cpath d='M10 50h80M50 10v80' stroke='%23ff0000' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='50' r='2' fill='%23ff0000'/%3E%3Ccircle cx='10' cy='10' r='2' fill='%23ff0000'/%3E%3Ccircle cx='90' cy='10' r='2' fill='%23ff0000'/%3E%3Ccircle cx='10' cy='90' r='2' fill='%23ff0000'/%3E%3Ccircle cx='90' cy='90' r='2' fill='%23ff0000'/%3E%3C/svg%3E\")",
+                    backgroundSize: "50px 50px"
+                  }}
+                  animate={{
+                    backgroundPosition: ["0px 0px", "50px 50px"],
+                  }}
+                  transition={{ 
+                    duration: 20, 
+                    repeat: Infinity, 
+                    ease: "linear" 
+                  }}
+                />
+
+                {/* Enhanced Border with glow */}
+                <div className="absolute inset-0 overflow-hidden rounded-xl">
+                  <motion.div
+                    className="absolute inset-0 border border-red-500/50 rounded-xl"
+                    animate={{
+                      opacity: [0.4, 0.7, 0.4],
+                      boxShadow: [
+                        'inset 0 0 15px rgba(255,0,0,0.2)',
+                        'inset 0 0 25px rgba(255,0,0,0.4)',
+                        'inset 0 0 15px rgba(255,0,0,0.2)'
+                      ]
+                    }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                  
+                  {/* Add subtle pulsing background gradient */}
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-br from-red-900/10 via-transparent to-transparent"
+                    animate={{
+                      opacity: [0.2, 0.4, 0.2],
+                    }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  
+                  {/* Horizontal scan line effect */}
+                  <motion.div
+                    className="absolute left-0 right-0 h-[1px] bg-red-500/30"
+                    style={{ top: "50%" }}
+                    animate={{
+                      top: ["0%", "100%"],
+                      opacity: [0, 0.7, 0],
+                    }}
+                    transition={{ 
+                      duration: 8, 
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  />
+                  
+                  {/* Corner decorations for the box */}
+                  {[
+                    { position: 'top-0 left-0', rotate: '0deg' },
+                    { position: 'top-0 right-0', rotate: '90deg' },
+                    { position: 'bottom-0 right-0', rotate: '180deg' },
+                    { position: 'bottom-0 left-0', rotate: '270deg' }
+                  ].map((corner, index) => (
+                    <motion.div
+                      key={`corner-${index}`}
+                      className={`absolute ${corner.position} w-12 h-12`}
+                      style={{ rotate: corner.rotate }}
+                    >
+                      <motion.div
+                        className="absolute top-0 left-0 h-0.5 bg-red-500/80 w-full origin-left"
+                        animate={{
+                          scaleX: [0, 1],
+                          opacity: [0.5, 1],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          repeatType: 'reverse',
+                          delay: index * 0.25,
+                        }}
+                      />
+                      <motion.div
+                        className="absolute top-0 left-0 w-0.5 bg-red-500/80 h-full origin-top"
+                        animate={{
+                          scaleY: [0, 1],
+                          opacity: [0.5, 1],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          repeatType: 'reverse',
+                          delay: index * 0.25 + 0.1,
+                        }}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+                
+                {/* Content with improved styling */}
+                <motion.div
+                  className="text-lg md:text-xl lg:text-2xl text-white relative z-10"
+                >
+                  {/* Terminal-style header */}
+                  <div className="flex flex-col space-y-1 mb-4">
+                    <div className="flex items-center">
+                      <motion.span 
+                        className="inline-block w-2 h-4 bg-green-500 mr-2"
+                        animate={{ opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      />
+                      <span className="text-green-400 text-xs font-mono">SYSTEM LOADED:</span>
+                    </div>
+                    <span className="text-green-400 text-xs font-mono pl-4">INITIALIZING... <motion.span
+                      animate={{ opacity: [0, 1] }}
+                      transition={{ duration: 0.3, repeat: Infinity, repeatType: 'reverse' }}
+                    >_</motion.span></span>
+                    <span className="text-green-400 text-xs font-mono pl-4">CONNECTING TO DATABASE... <span className="text-green-500">SUCCESS</span></span>
+                    <span className="text-green-400 text-xs font-mono pl-4">RUNNING datazen.exe...</span>
+                    <motion.div 
+                      className="w-full h-1 bg-gradient-to-r from-green-500 to-green-300 rounded-full mt-1 mb-2 opacity-75"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 2, ease: "easeOut" }}
+                    />
+                  </div>
+                  
+                  <motion.p
+                    className="mt-2 relative"
+                    style={{ textShadow: '2px 2px 0px #000000' }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 1.5 }}
+                  >
+                    <span className="text-red-500 text-sm font-mono">&gt; WELCOME TO</span>
+                    <motion.span 
+                      className="block text-2xl md:text-3xl mt-2 tracking-wide"
+                      style={{ letterSpacing: "0.05em" }}
+                    >
+                      The Official Data Science Council
+                      <span className="inline-block ml-2">of</span>
+                    </motion.span>
+                    
+                    {/* Enhanced university name with glitch effect */}
+                    <motion.div
+                      className="relative block mt-4 font-bold text-3xl md:text-4xl overflow-hidden"
+                      style={{ transformStyle: "preserve-3d" }}
+                    >
+                      {/* Glitch layers */}
+                      <motion.span 
+                        className="absolute top-0 left-[2px] text-red-500/50 w-full"
+                        animate={{
+                          opacity: [0, 0.6, 0],
+                          left: ["2px", "3px", "2px"],
+                        }}
+                        transition={{ 
+                          duration: 0.15, 
+                          repeat: Infinity, 
+                          repeatType: "mirror",
+                          repeatDelay: 7
+                        }}
+                      >
+                        Somaiya Vidyavihar University
+                      </motion.span>
+                      
+                      <motion.span 
+                        className="absolute top-0 left-[-2px] text-blue-400/50 w-full"
+                        animate={{
+                          opacity: [0, 0.6, 0],
+                          left: ["-2px", "-3px", "-2px"],
+                        }}
+                        transition={{ 
+                          duration: 0.15, 
+                          repeat: Infinity, 
+                          repeatType: "mirror",
+                          repeatDelay: 7.1
+                        }}
+                      >
+                        Somaiya Vidyavihar University
+                      </motion.span>
+                      
+                      {/* Main text */}
+                      <motion.span
+                        className="relative block"
+                        animate={{
+                          color: ['#ffffff', '#ff1a1a', '#ffffff'],
+                          textShadow: [
+                            '2px 2px 0px #000000, 0 0 10px rgba(255,0,0,0.2)',
+                            '2px 2px 0px #000000, 0 0 15px rgba(255,0,0,0.4)',
+                            '2px 2px 0px #000000, 0 0 10px rgba(255,0,0,0.2)'
+                          ],
+                        }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        Somaiya Vidyavihar University
+                      </motion.span>
+                    </motion.div>
+                  </motion.p>
+                  
+                  {/* Enhanced footer line */}
+                  <motion.div 
+                    className="mt-8 mb-2 text-sm text-red-400/90 font-mono flex justify-between items-center border-t border-red-500/20 pt-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2 }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-red-500"
+                        animate={{
+                          opacity: [1, 0.5, 1],
+                          scale: [1, 0.9, 1]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <span className="tracking-widest">EST. 2019</span>
+                    </div>
+                    <span className="tracking-widest font-light">INNOVATION • INSIGHT • IMPACT</span>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+
+              {/* Interactive Buttons - Adjusted spacing */}
+              <div className="flex justify-center gap-10 mt-12">
+                <motion.button
+                  className="relative group"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => window.location.href = '#about'}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-red-500/30 to-white/20 rounded-lg blur-sm"
+                    animate={{
+                      opacity: [0.4, 0.6, 0.4],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  <div className="relative px-10 py-3 bg-black/90 border border-red-500 group-hover:border-white transition-colors duration-300 flex items-center gap-3 rounded-lg backdrop-blur-sm">
+                    <div className="pixel-button w-3 h-3" />
+                    <span className="text-white text-lg font-medium tracking-wider">START</span>
+                  </div>
+                </motion.button>
+
+                <motion.button
+                  className="relative group"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowOptions(true)}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-white/20 to-red-500/30 rounded-lg blur-sm"
+                    animate={{
+                      opacity: [0.4, 0.6, 0.4],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  <div className="relative px-10 py-3 bg-black/90 border border-white group-hover:border-red-500 transition-colors duration-300 flex items-center gap-3 rounded-lg backdrop-blur-sm">
+                    <div className="pixel-joystick w-3 h-3" />
+                    <span className="text-white text-lg font-medium tracking-wider">OPTIONS</span>
+                  </div>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Power LED Indicator - repositioned */}
+        <motion.div
+          className="absolute bottom-10 right-10 w-3 h-3 flex flex-col items-center"
+        >
+          <motion.div
+            className="w-3 h-3 rounded-full"
+            animate={{
+              backgroundColor: ['#ff0000', '#ff6666', '#ff0000'],
+              boxShadow: [
+                '0 0 10px #ff0000',
+                '0 0 20px #ff0000',
+                '0 0 10px #ff0000'
+              ]
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          <span className="text-red-500 text-[10px] mt-1 pixel-text">POWER</span>
+        </motion.div>
+      </motion.div>
+
+      {/* Add a footer DATAZEN branding */}
+      <div className="absolute bottom-5 right-5 z-10">
+        <div className="text-sm font-bold text-red-600 border border-red-600/30 rounded-md px-4 py-1 bg-black/50">
+          DATAZEN
+        </div>
+      </div>
+
+      {/* Corner Decorations - reduced visibility */}
+      {[
+        'top-0 left-0',
+        'top-0 right-0 rotate-90',
+        'bottom-0 right-0 rotate-180',
+        'bottom-0 left-0 -rotate-90'
+      ].map((position, index) => (
+        <motion.div
+          key={index}
+          className={`absolute w-16 h-16 ${position} opacity-60`}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 0.6, scale: 1 }}
+          transition={{ delay: 0.2 * index }}
+        >
+          <motion.div
+            className="w-full h-full relative"
+            animate={{
+              opacity: [0.4, 0.7, 0.4],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="absolute inset-0 border-l-4 border-t-4 border-red-500" />
+            <div className="absolute inset-4 border-l-2 border-t-2 border-white/30" />
+          </motion.div>
+        </motion.div>
+      ))}
+
+      {/* Retro Arcade Controls - simplified */}
+      <div className="absolute bottom-6 left-6 flex items-center space-x-6 z-20 scale-75 opacity-70">
+        <div className="flex flex-col items-center">
+          <div className="pixel-joystick w-8 h-8 mb-1"></div>
+          <span className="text-white text-[10px] pixel-text">MOVE</span>
+        </div>
+        <div className="flex space-x-2">
+          <div className="flex flex-col items-center">
+            <div className="pixel-button w-6 h-6 mb-1 bg-red-500"></div>
+            <span className="text-white text-[10px] pixel-text">A</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="pixel-button w-6 h-6 mb-1 bg-blue-500"></div>
+            <span className="text-white text-[10px] pixel-text">B</span>
+          </div>
+        </div>
+      </div>
+
+      {/* High Score Display - simplfied */}
+      <div className="absolute top-16 right-6 z-20 pixel-text text-white text-[10px] opacity-70">
+        <div className="mb-1 text-yellow-300">HIGH SCORE</div>
+        <div className="text-right neon-red">00012850</div>
+      </div>
+
+      {/* Theme Toggle Button */}
+      <motion.div
+        className={`fixed top-4 right-4 z-50 w-12 h-6 rounded-full p-1 cursor-pointer ${
+          isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
+        }`}
+        onClick={toggleTheme}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <motion.div
+          className={`w-4 h-4 rounded-full ${
+            isDarkMode ? 'bg-white' : 'bg-red-500'
+          }`}
+          animate={{
+            x: isDarkMode ? 0 : 24
+          }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        />
+        <span className="sr-only">Toggle theme</span>
       </motion.div>
     </section>
   );
