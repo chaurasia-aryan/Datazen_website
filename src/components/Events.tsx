@@ -141,8 +141,8 @@ const Events = () => {
             0deg,
             transparent,
             transparent 39px,
-            rgba(255, 0, 0, 0.1) 39px,
-            rgba(255, 0, 0, 0.1) 40px
+            rgba(255, 0, 0, 0.5) 39px,
+            rgba(255, 0, 0, 0.5) 40px
           )`
         }} />
         <div className="absolute inset-0" style={{
@@ -150,8 +150,8 @@ const Events = () => {
             90deg,
             transparent,
             transparent 39px,
-            rgba(255, 0, 0, 0.1) 39px,
-            rgba(255, 0, 0, 0.1) 40px
+            rgba(255, 0, 0, 0.5) 39px,
+            rgba(255, 0, 0, 0.5) 40px
           )`
         }} />
       </div>
@@ -177,7 +177,7 @@ const Events = () => {
       <div className="absolute inset-0 overflow-hidden">
         <motion.div style={{ opacity }} className="absolute inset-0">
           <motion.div 
-            className="absolute right-0 top-20 w-64 h-64 bg-red-50 rounded-full blur-3xl"
+            className="absolute right-0 top-20 w-64 h-64 bg-red-500 rounded-full blur-3xl"
             animate={{
               scale: [1, 1.1, 1],
               x: [0, 20, 0],
