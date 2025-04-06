@@ -53,10 +53,6 @@ const Hero = () => {
     }
   };
 
-  // Add navbar items
-  const navItems = ['HOME', 'ABOUT', 'EVENTS', 'TEAM', 'CONTACT'];
-  const [activeNavItem, setActiveNavItem] = useState(0);
-
   const handleOptionSelect = (index: number) => {
     switch(index) {
       case 0: // Graphics
@@ -161,6 +157,7 @@ const Hero = () => {
 
   return (
     <section 
+      id="home"
       ref={containerRef} 
       className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden ${
         isDarkMode ? 'bg-[#0A0A0A]' : 'bg-[#f0f0f0]'
@@ -304,99 +301,6 @@ const Hero = () => {
       <div className="absolute inset-0 pointer-events-none z-40 opacity-[0.03] mix-blend-screen">
         <div className="absolute inset-0 bg-noise animate-noise" />
       </div>
-
-      {/* Immersive Navbar - Improved integration */}
-      <motion.div 
-        className="fixed top-0 left-0 right-0 z-30"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-      >
-        {/* Navbar background with gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-transparent h-24" />
-        
-        {/* Red line accent */}
-        <motion.div 
-          className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/50 to-transparent"
-          animate={{
-            opacity: [0.3, 0.6, 0.3]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-
-        <div className="container mx-auto px-6 py-4 relative">
-          <div className="flex justify-between items-center">
-            {/* Logo */}
-            <AnchorLink href="/" className="flex items-center space-x-2 group">
-              <div className="relative">
-                <span className="text-2xl font-bold tracking-wider relative z-10">
-                  <span className="text-white group-hover:text-red-400 transition-colors">DATA</span>
-                  <span className="text-red-500 group-hover:text-red-400 transition-colors">ZEN</span>
-                </span>
-                <motion.div
-                  className="absolute inset-0 bg-red-500/20 blur-sm"
-                  animate={{
-                    opacity: [0.2, 0.4, 0.2]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </div>
-            </AnchorLink>
-            
-            {/* Navigation */}
-            <div className="hidden md:flex items-center space-x-12">
-              {navItems.map((item, index) => (
-                <motion.div
-                  key={item}
-                  className="relative"
-                  onHoverStart={() => setActiveNavItem(index)}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <AnchorLink 
-                    href={`#${item.toLowerCase()}`} 
-                    className="text-white/90 text-sm tracking-wider hover:text-red-400 transition-colors relative py-2"
-                  >
-                    {item}
-                  </AnchorLink>
-                  {activeNavItem === index && (
-                    <motion.div 
-                      className="absolute -bottom-1 left-0 right-0 h-[2px]"
-                      layoutId="navIndicator"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <div className="h-full bg-gradient-to-r from-transparent via-red-500 to-transparent" />
-                    </motion.div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Power LED */}
-            <motion.div
-              className="w-3 h-3 relative"
-              animate={{
-                boxShadow: [
-                  '0 0 5px #ff0000',
-                  '0 0 10px #ff0000',
-                  '0 0 5px #ff0000'
-                ]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <motion.div
-                className="absolute inset-0 rounded-full bg-red-500"
-                animate={{
-                  opacity: [0.7, 1, 0.7]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              <div className="absolute inset-0 rounded-full bg-red-500 blur-sm" />
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
 
       {/* Main Content - Improved alignment */}
       <motion.div

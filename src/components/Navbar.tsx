@@ -12,39 +12,55 @@ const navLinks = [
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<number | null>(null);
+  const [activeItem, setActiveItem] = useState<number>(0); // Default to HOME
   
   useEffect(() => {
     const handleScroll = () => {
+      // Track if we've scrolled down
       if (window.scrollY > 50) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
       
-      // Update active link based on scroll position
+      // Handle section tracking more reliably
+      const isHome = window.scrollY < window.innerHeight * 0.5;
+      if (isHome) {
+        setActiveItem(0); // HOME
+        return;
+      }
+      
+      // Find which section is currently in view
       const sections = document.querySelectorAll('section[id]');
+      const scrollPosition = window.scrollY + window.innerHeight * 0.3;
+      
+      let foundActive = false;
       sections.forEach(section => {
-        const sectionTop = (section as HTMLElement).offsetTop - 100;
-        const sectionHeight = (section as HTMLElement).offsetHeight;
+        const sectionTop = (section as HTMLElement).offsetTop;
+        const sectionBottom = sectionTop + (section as HTMLElement).offsetHeight;
         const sectionId = section.getAttribute('id');
         
-        if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+        if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
           if (sectionId) {
-            setActiveItem(navLinks.findIndex(link => link.name === sectionId.replace('-', ' ')));
+            const index = navLinks.findIndex(link => link.href === `#${sectionId}`);
+            if (index !== -1) {
+              setActiveItem(index);
+              foundActive = true;
+            }
           }
         }
       });
       
-      // If at top of page, set home as active
-      if (window.scrollY < 100) {
-        setActiveItem(null);
+      // Default to HOME if no section is active
+      if (!foundActive) {
+        setActiveItem(0);
       }
     };
     
     window.addEventListener('scroll', handleScroll);
-    // Call handleScroll on initial load to set initial active link
+    // Initial check
     handleScroll();
+    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
@@ -52,77 +68,58 @@ const Navbar = () => {
     <motion.nav 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-white shadow-lg py-2 border-b border-gray-100' 
-          : 'bg-black/40 backdrop-blur-md py-5'
+          ? 'bg-black/30 backdrop-blur-md py-2' 
+          : 'bg-transparent py-5'
       }`}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto">
-        {/* Retro Border Effect */}
         <div className="relative">
-          <motion.div 
-            className="absolute inset-0 bg-black border-2 border-red-500"
-            animate={{
-              borderColor: ['rgba(255,0,0,0.5)', 'rgba(255,0,0,1)', 'rgba(255,0,0,0.5)'],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-          
-          {/* Scanline Effect */}
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-black/5 to-transparent bg-size-200 animate-scan" />
-
           {/* Navigation Items */}
-          <div className="relative flex items-center justify-between px-6 py-3">
+          <div className="flex items-center justify-between px-6 py-3">
             {/* Logo */}
             <motion.div 
               className="text-2xl font-bold"
               whileHover={{ scale: 1.05 }}
             >
-              <a href="/">
+              <a href="/" onClick={() => setActiveItem(0)}>
                 <span className="text-white">DATA</span>
                 <span className="text-red-500">ZEN</span>
               </a>
             </motion.div>
 
             {/* Menu Items */}
-            <div className="flex space-x-8">
+            <div className="hidden md:flex space-x-8">
               {navLinks.map((item, index) => (
                 <motion.div
                   key={item.name}
                   className="relative"
-                  onHoverStart={() => setActiveItem(index)}
-                  onHoverEnd={() => setActiveItem(null)}
                 >
-                  <a href={item.href}>
+                  <a 
+                    href={item.href}
+                    onClick={() => setActiveItem(index)}
+                  >
                     <motion.span 
-                      className={`text-sm font-bold tracking-wider ${activeItem === index ? 'text-red-500' : 'text-white'}`}
+                      className={`text-sm font-medium tracking-wider hover:text-red-400 transition-colors duration-300 ${activeItem === index ? 'text-red-500' : 'text-white/90'}`}
                       whileHover={{ x: 5 }}
                     >
                       {item.name}
                     </motion.span>
                   </a>
                   
-                  {/* Hover Indicator */}
+                  {/* Bottom Line - only show for active item */}
                   {activeItem === index && (
                     <motion.div
-                      className="absolute -left-4 top-1/2 -translate-y-1/2 text-red-500"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      exit={{ scaleX: 0 }}
                       transition={{ duration: 0.2 }}
-                    >
-                      ▶
-                    </motion.div>
+                      layoutId="navIndicator"
+                    />
                   )}
-
-                  {/* Bottom Line */}
-                  <motion.div
-                    className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: activeItem === index ? 1 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  />
                 </motion.div>
               ))}
             </div>
@@ -146,7 +143,7 @@ const Navbar = () => {
       
       {/* Mobile Menu Button */}
       <motion.button 
-        className="md:hidden focus:outline-none z-50"
+        className="md:hidden absolute top-4 right-4 focus:outline-none z-50"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -157,21 +154,21 @@ const Navbar = () => {
             className={`block w-6 h-0.5 absolute transition-all duration-300 ${
               mobileMenuOpen 
                 ? 'rotate-45 bg-white' 
-                : `-translate-y-1.5 ${isScrolled ? 'bg-black' : 'bg-white'}`
+                : '-translate-y-1.5 bg-white'
             }`}
           ></span>
           <span 
             className={`block w-6 h-0.5 absolute transition-all duration-300 ${
               mobileMenuOpen 
                 ? 'opacity-0 bg-white' 
-                : `opacity-100 ${isScrolled ? 'bg-black' : 'bg-white'}`
+                : 'opacity-100 bg-white'
             }`}
           ></span>
           <span 
             className={`block w-6 h-0.5 absolute transition-all duration-300 ${
               mobileMenuOpen 
                 ? '-rotate-45 bg-white' 
-                : `translate-y-1.5 ${isScrolled ? 'bg-black' : 'bg-white'}`
+                : 'translate-y-1.5 bg-white'
             }`}
           ></span>
         </div>
@@ -181,7 +178,7 @@ const Navbar = () => {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div 
-            className="fixed inset-0 bg-gradient-to-b from-black to-red-900/90 backdrop-blur-md flex flex-col items-center justify-center md:hidden z-40"
+            className="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center md:hidden z-40"
             initial={{ opacity: 0, clipPath: "circle(0% at calc(100% - 32px) 32px)" }}
             animate={{ opacity: 1, clipPath: "circle(150% at calc(100% - 32px) 32px)" }}
             exit={{ opacity: 0, clipPath: "circle(0% at calc(100% - 32px) 32px)" }}
@@ -197,17 +194,23 @@ const Navbar = () => {
                 <motion.a 
                   key={item.name}
                   href={item.href}
-                  className="text-white hover:text-gray-200 text-2xl font-semibold transition-colors relative group"
+                  className={`text-2xl font-medium transition-colors relative group ${
+                    activeItem === index ? 'text-red-400' : 'text-white hover:text-red-400'
+                  }`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 + index * 0.1 }}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveItem(index);
+                  }}
                   whileHover={{ scale: 1.05, x: 10 }}
                 >
                   {item.name}
                   <motion.span 
-                    className="absolute left-0 right-0 bottom-0 h-0.5 bg-white origin-left"
+                    className="absolute left-0 right-0 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent origin-left"
                     initial={{ scaleX: 0 }}
+                    animate={{ scaleX: activeItem === index ? 1 : 0 }}
                     whileHover={{ scaleX: 1 }}
                     transition={{ duration: 0.3 }}
                   />
