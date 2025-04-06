@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
-import Particles from "../ReactBits/Particles/Particles";
+//import Particles from "../ReactBits/Particles/Particles";
 import BlurText from "../ReactBits/Particles/BlurText";
 import ScrollVelocity from "../ReactBits/Particles/ScrollVelocity";
 
@@ -156,19 +156,8 @@ const Events = () => {
         }} />
       </div>
 
-      {/* Particles Background */}
-      <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
-        <Particles
-          particleColors={['#ffffff', '#ffffff']}
-          particleCount={200}
-          particleSpread={10}
-          speed={0.1}
-          particleBaseSize={300}
-          moveParticlesOnHover={true}
-          alphaParticles={false}
-          disableRotation={false}
-        />
-      </div>
+      
+    
       
       {/* Complementary gradient transition from Team section */}
       <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/30 to-transparent"></div>
