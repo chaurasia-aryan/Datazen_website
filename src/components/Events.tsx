@@ -1,5 +1,8 @@
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
+import Particles from "../ReactBits/Particles/Particles";
+import BlurText from "../ReactBits/Particles/BlurText";
+import ScrollVelocity from "../ReactBits/Particles/ScrollVelocity";
 
 // Sample event data with updated images
 const eventsData = [
@@ -44,6 +47,9 @@ const Events = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   const categories = ["All", "Workshop", "Hackathon", "Conference", "Networking"];
+
+  // Define the velocity variable
+  const velocity = 25; // Example value, adjust as needed
 
   // Parallax scrolling effect
   const { scrollYProgress } = useScroll({
@@ -126,8 +132,44 @@ const Events = () => {
     <section 
       id="events" 
       ref={sectionRef}
-      className="relative pt-28 pb-20 md:pt-40 md:pb-32 px-4 bg-white overflow-hidden"
+      className="relative pt-28 pb-20 md:pt-40 md:pb-32 px-4 bg-black overflow-hidden"
     >
+      {/* Retro Background Grid */}
+      <div className="absolute inset-0 bg-[#0A0A0A]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 39px,
+            rgba(255, 0, 0, 0.1) 39px,
+            rgba(255, 0, 0, 0.1) 40px
+          )`
+        }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 39px,
+            rgba(255, 0, 0, 0.1) 39px,
+            rgba(255, 0, 0, 0.1) 40px
+          )`
+        }} />
+      </div>
+
+      {/* Particles Background */}
+      <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
+        <Particles
+          particleColors={['#ffffff', '#ffffff']}
+          particleCount={200}
+          particleSpread={10}
+          speed={0.1}
+          particleBaseSize={300}
+          moveParticlesOnHover={true}
+          alphaParticles={false}
+          disableRotation={false}
+        />
+      </div>
+      
       {/* Complementary gradient transition from Team section */}
       <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/30 to-transparent"></div>
       
@@ -191,12 +233,16 @@ const Events = () => {
                 02 · EVENTS & ACTIVITIES
               </motion.span>
             </motion.div>
+            <div className="w-full flex justify-center">
+
+            <ScrollVelocity
+              texts={[' OUR ', 'EVENTS']} 
+              velocity={velocity} 
+              className="custom-scroll-text"
+            />
+            </div>
             
-            <motion.h2 variants={itemVariants} className="text-4xl md:text-6xl font-bold mb-6 text-black">
-              Our <span className="text-primary">Events</span>
-            </motion.h2>
-            
-            <motion.p variants={itemVariants} className="text-lg text-gray-700 max-w-2xl mx-auto">
+            <motion.p variants={itemVariants} className="text-lg text-slate-300 max-w-2xl mx-auto">
               Join us for exciting workshops, hackathons, and networking events. We organize various events throughout the year to foster learning and collaboration.
             </motion.p>
           </motion.div>
@@ -242,7 +288,7 @@ const Events = () => {
                   animate={hoveredEvent === event.id ? "hover" : "rest"}
                   onHoverStart={() => setHoveredEvent(event.id)}
                   onHoverEnd={() => setHoveredEvent(null)}
-                  className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100 transition-all duration-300"
+                  className="bg-black rounded-2xl overflow-hidden shadow-md border-4 border-red-800 transition-all duration-300"
                 >
                   <div className="relative h-48 overflow-hidden">
                     <motion.img 
@@ -275,17 +321,19 @@ const Events = () => {
                       >
                         <div className="w-2 h-2 rounded-full bg-primary"></div>
                       </motion.div>
-                      <div className="text-gray-500 text-sm">{event.date}</div>
+                      <div className="text-gray-100 text-sm">{event.date}</div>
                     </div>
                     <h3 className="text-xl font-bold text-black mb-2 group-hover:text-primary transition-colors duration-300">
                       {event.title}
                     </h3>
-                    <p className="text-gray-600 text-sm mb-4">
+                    <p className="text-red-600 hover:text-red-700 font-mono text-sm font-bold mb-4 leading-relaxed tracking-wide transition-colors duration-300"
+
+                    >
                       {event.description}
                     </p>
                     <motion.a 
                       href="#" 
-                      className="inline-flex items-center text-primary text-sm font-medium transition-all duration-300"
+                      className="inline-flex items-center text-primary text-sm font-mono font-medium transition-all duration-300"
                       whileHover={{ x: 5 }}
                       initial={{ x: 0 }}
                     >
@@ -516,4 +564,4 @@ const Events = () => {
   );
 };
 
-export default Events; 
+export default Events;
