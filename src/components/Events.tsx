@@ -7,7 +7,7 @@ const eventsData = [
   {
     id: 1,
     title: "Diddy Party",
-    description: "A comprehensive workshop on data science fundamentals and practical applications.",
+    description: "Diddy parties is a collective name for the parties hosted from the 1990s to the 2020s by the rapper, producer, and entrepreneur Sean Combs, sometimes known as Puff Daddy and Diddy. The initial series, known as White Parties, were a series of parties hosted by Combs between 1998 and 2009..",
     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSP4sjr7wjbzMT8g2nNFLPoo5f785AGUtxDGQ&s",
     date: "June 15, 2023",
     category: "Workshop"
@@ -165,8 +165,8 @@ const Events = () => {
             0deg,
             transparent,
             transparent 39px,
-            rgba(255, 0, 0, 0.3) 39px,
-            rgba(255, 0, 0, 0.3) 40px
+            rgba(255, 0, 0, 0.2) 39px,
+            rgba(255, 0, 0, 0.) 40px
           )`
         }} />
         <div className="absolute inset-0" style={{
