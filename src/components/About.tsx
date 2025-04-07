@@ -81,8 +81,8 @@ const About = () => {
             0deg,
             transparent,
             transparent 39px,
-            rgba(255, 0, 0, 0.1) 39px,
-            rgba(255, 0, 0, 0.1) 40px
+            rgba(255, 0, 0, 0.3) 39px,
+            rgba(255, 0, 0, 0.3) 40px
           )`
         }} />
         <div className="absolute inset-0" style={{
